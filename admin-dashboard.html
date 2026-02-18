@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav id="navbar-placeholder"></nav>
+
+    <div class="container mt-4">
+        <h2>Admin Management</h2>
+        <ul class="nav nav-tabs" id="adminTab" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#employees">Employees</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#departments">Departments</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#accounts">Accounts</button></li>
+        </ul>
+
+        <div class="tab-content p-3 border border-top-0">
+            <div class="tab-pane fade show active" id="employees">
+                <button class="btn btn-success mb-3">+ Add Employee</button>
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Name</th><th>Position</th></tr></thead>
+                    <tbody><tr><td>101</td><td>John Doe</td><td>Developer</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="departments">
+                <button class="btn btn-success mb-3">+ Add Department</button>
+                <table class="table">
+                    <thead><tr><th>Name</th><th>Description</th></tr></thead>
+                    <tbody><tr><td>Engineering</td><td>Tech team</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="accounts">
+                <button class="btn btn-success mb-3">+ Add Account</button>
+                <div class="mb-3">
+                    <label>Role</label>
+                    <select class="form-select w-25">
+                        <option>User</option>
+                        <option>Admin</option>
+                    </select>
+                </div>
+                <table class="table">
+                    <thead><tr><th>Email</th><th>Role</th></tr></thead>
+                    <tbody><tr><td>admin@gmail.com</td><td>Admin</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
