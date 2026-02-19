@@ -1,0 +1,108 @@
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.close {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #aaa;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close:hover {
+  color: #000;
+}
+
+/* Item Row Styles */
+.item-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.item-row input[type="text"] {
+  flex: 2;
+}
+
+.item-row input[type="number"] {
+  width: 80px;
+}
+
+/* Button containers to prevent layout shift */
+.btn-container-single {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-container-double {
+  width: 90px;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+/* Request Type Input */
+#requestType {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+#itemsContainer {
+  margin-bottom: 15px;
+}
+
+/* Action button styles for requests table */
+#requestsTableBody .btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+#requestsTableBody .btn:last-child {
+  margin-right: 0;
+}
+
+/* Text muted for no actions available */
+#requestsTableBody .text-muted {
+  font-size: 12px;
+}

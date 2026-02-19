@@ -1,25 +1,445 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Full-Stack App (Student Build)</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <nav id="navbar-placeholder"></nav>
-
-    <div class="container mt-5">
-        <h1>Welcome to Full-Stack App</h1>
-        <p class="lead">A static prototype simulating backend integration.</p>
-        <div class="alert alert-info">
-            <strong>Admin Login:</strong> admin@gmail.com | <strong>Pass:</strong> admin1234
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .view-section {
+        display: none;
+      }
+      .view-section.active {
+        display: block;
+      }
+      .role-admin {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="#" id="nav-brand"
+          >Full-Stack App Cali John Kiesho Camilo</a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto" id="auth-links-logged-out">
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="link-login">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="link-register">Register</a>
+            </li>
+          </ul>
+          <ul class="navbar-nav ms-auto d-none" id="auth-links-logged-in">
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="userDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+              >
+                <span id="display-username">User</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#" id="link-profile">Profile</a></li>
+                <li class="role-admin">
+                  <a class="dropdown-item" href="#">Employees</a>
+                </li>
+                <li class="role-admin">
+                  <a class="dropdown-item" href="#" id="link-accounts">Accounts</a>
+                </li>
+                <li class="role-admin">
+                  <a class="dropdown-item" href="#" id="link-departments">Departments</a>
+                </li>
+                <li><a class="dropdown-item" href="#" id="link-my-requests">My Requests</a></li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="#" id="link-logout">Logout</a>
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
-        <a href="login.html" class="btn btn-primary">Get Started →</a>
+      </div>
+    </nav>
+
+    <section id="home-view" class="view-section active">
+      <div class="container">
+        <div class="row justify-content-left">
+          <div class="col-md-8 bg-white p-5 shadow-sm rounded">
+            <h1 class="fw-bold mb-4">Welcome to Full-Stack App</h1>
+            <p class="lead text-secondary mb-4">
+              A static prototype before backend integration. Simulates:
+            </p>
+            <ul class="text-secondary mb-5">
+              <li>Email registration + fake verification</li>
+              <li>Login with JWT-like token simulation</li>
+              <li>Role-based UI (Admin/User)</li>
+              <li>CRUD for Employees, Departments, Requests</li>
+            </ul>
+            <div
+              class="alert alert-light border shadow-sm d-flex align-items-center mb-5 py-4"
+            >
+              <span class="text-primary me-3 fs-4">●</span>
+              <span
+                ><strong> ⚠️ Note:</strong> All data is stored in
+                <code>LocalStorage</code>.</span
+              >
+            </div>
+            <button class="btn btn-primary btn-lg px-4" id="btn-get-started">
+              Get Started →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="register-view" class="view-section">
+      <div class="container">
+        <h2 class="fw-bold mb-4">Register Account</h2>
+        <form id="registerForm" class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label">First Name</label
+            ><input type="text" id="firstName" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Last Name</label
+            ><input type="text" id="lastName" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label
+            ><input type="email" id="regEmail" class="form-control" required />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Password</label
+            ><input
+              type="password"
+              id="regPass"
+              class="form-control"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-success px-4">Sign Up</button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary px-4"
+            id="btn-cancel-reg"
+          >
+            Cancel
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section id="verify-view" class="view-section">
+      <div class="container">
+        <h2 class="fw-bold mb-4">Verify Your Email</h2>
+        <div class="alert alert-success d-flex align-items-center mb-4">
+          <span class="me-2">✅</span>
+          <span
+            >A verification link has been sent to
+            <strong id="user-email-display"></strong
+          >.</span>
+        </div>
+        <p class="text-secondary">
+          For demo purposes, click below to simulate verification:
+        </p>
+        <div class="d-flex gap-2">
+          <button class="btn btn-success" id="btn-simulate-verify">
+            ✅ Simulate Email Verification
+          </button>
+          <button class="btn btn-outline-secondary" id="btn-go-login">
+            Go to Login
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="login-view" class="view-section">
+      <div class="container">
+        <div id="login-alert" class="alert alert-success d-none mb-4">
+          ✅ Email verified! You may now log in.
+        </div>
+        <h2 class="fw-bold mb-4">Login</h2>
+        <form id="loginForm" class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label">Email</label
+            ><input
+              type="email"
+              id="loginEmail"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Password</label
+            ><input
+              type="password"
+              id="loginPass"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">Login</button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary px-4"
+              id="btn-cancel-login"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="profile-view" class="view-section">
+      <div class="container">
+        <h2 class="fw-bold mb-4">My Profile</h2>
+        <div class="card shadow-sm col-md-8">
+          <div class="card-body p-4">
+            <h4 class="fw-bold mb-3" id="profile-name-display">User Name</h4>
+            <p class="mb-1"><strong>Email:</strong> <span id="profile-email-display">user@example.com</span></p>
+            <p class="mb-4"><strong>Role:</strong> <span id="profile-role-display">User</span></p>
+            <button class="btn btn-outline-primary" id="btn-edit-profile">Edit Profile</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Employees Section (Admin Only) -->
+    <section id="employees-view" class="view-section">
+      <div class="container">
+        <div class="header d-flex justify-content-between align-items-center mb-4">
+          <h2 class="fw-bold">Employees</h2>
+          <button class="btn btn-success" onclick="showForm()">+ Add Employee</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped" id="employeeTable">
+            <thead class="table-dark">
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Position</th>
+                <th>Dept</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Employee Form -->
+        <div class="form-container card p-4 mb-4" id="employeeForm" style="display: none;">
+          <h3 class="fw-bold mb-4">Add/Edit Employee</h3>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Employee ID</label>
+              <input type="text" class="form-control" id="empId">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">User Email</label>
+              <input type="email" class="form-control" id="empEmail">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Position</label>
+              <input type="text" class="form-control" id="empPosition">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Department</label>
+              <select class="form-select" id="empDept">
+                <option value="">Select Department</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Hire Date</label>
+              <input type="date" class="form-control" id="empHireDate">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveEmp()">Save</button>
+          <button class="btn btn-secondary" onclick="hideEmpForm()">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Accounts Section (Admin Only) -->
+    <section id="accounts-view" class="view-section">
+      <div class="container">
+        <div class="header d-flex justify-content-between align-items-center mb-4">
+          <h2 class="fw-bold">Accounts</h2>
+          <button class="btn btn-success" onclick="addNewAccount()">+ Add Account</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped" id="accountTable">
+            <thead class="table-dark">
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Verified</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="accountTableBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted">No accounts.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Account Form -->
+        <div class="form-container card p-4 mb-4" id="accountForm" style="display: none;">
+          <h3 class="fw-bold mb-4">Add/Edit Account</h3>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-control" id="accountFirstName">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-control" id="accountLastName">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="accountEmail">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-control" id="accountPassword">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Role</label>
+              <select class="form-select" id="accountRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="form-check mt-4">
+                <input type="checkbox" class="form-check-input" id="accountVerified">
+                <label class="form-check-label"> Verified</label>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveAccount()">Save</button>
+          <button class="btn btn-secondary" onclick="hideAccountForm()">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Departments Section (Admin Only) -->
+    <section id="departments-view" class="view-section">
+      <div class="container">
+        <div class="header d-flex justify-content-between align-items-center mb-4">
+          <h2 class="fw-bold">Departments</h2>
+          <button class="btn btn-success" onclick="showDeptForm()">+ Add Department</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped" id="departmentTable">
+            <thead class="table-dark">
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="departmentTableBody">
+              <tr>
+                <td colspan="3" class="text-center text-muted">No departments.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Department Form -->
+        <div class="form-container card p-4 mb-4" id="departmentForm" style="display: none;">
+          <h3 class="fw-bold mb-4">Add/Edit Department</h3>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Department Name</label>
+              <input type="text" class="form-control" id="deptName">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="deptDescription" rows="1"></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveDept()">Save</button>
+          <button class="btn btn-secondary" onclick="hideDeptForm()">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- My Requests Section (Admin and User) -->
+    <section id="myrequests-view" class="view-section">
+      <div class="container">
+        <div class="header d-flex justify-content-between align-items-center mb-4">
+          <h2 class="fw-bold">My Requests</h2>
+          <button class="btn btn-success" onclick="openRequestModal()">+ New Request</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped" id="requestsTable">
+            <thead class="table-dark">
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Items</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th class="role-admin">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody">
+              <tr>
+                <td colspan="6" class="text-center text-muted">You have no requests yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Request Modal -->
+    <div class="modal" id="requestModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>New Request</h3>
+          <span class="close" onclick="closeRequestModal()">&times;</span>
+        </div>
+
+        <label>Type</label>
+        <input type="text" id="requestType" value="Equipment">
+
+        <label>Items</label>
+        <div id="itemsContainer"></div>
+
+        <button class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
