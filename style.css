@@ -106,3 +106,75 @@
 #requestsTableBody .text-muted {
   font-size: 12px;
 }
+
+/* Page visibility */
+.page { display: none; }
+.page.active { display: block; }
+
+/* Role-based visibility */
+body.not-authenticated .role-logged-in { display: none; }
+body.authenticated .role-logged-out { display: none; }
+.role-admin { display: none; }
+body.is-admin .role-admin { display: block; }
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 250px;
+  padding: 15px 20px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+  background-color: #28a745;
+}
+
+.toast.error {
+  background-color: #dc3545;
+}
+
+.toast.warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.toast.info {
+  background-color: #17a2b8;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast.hiding {
+  animation: slideOut 0.3s ease forwards;
+}

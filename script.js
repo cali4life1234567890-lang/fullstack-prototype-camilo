@@ -1,3 +1,38 @@
+// ============================================
+// Phase 8: Toast Notifications
+// ============================================
+function showToast(message, type = 'info') {
+  console.log(`[TOAST DEBUG] ${type}: ${message}`);
+  
+  const container = document.getElementById('toast-container');
+  if (!container) {
+    // Fallback to alert if toast container not found
+    console.warn('[TOAST DEBUG] Toast container not found, using alert');
+    alert(message);
+    return;
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  
+  container.appendChild(toast);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
+}
+// ============================================
+// End Phase 8
+// ============================================
+
+// Global variables
 const views = document.querySelectorAll('.view-section');
 const loginAlert = document.getElementById('login-alert');
 const userEmailDisplay = document.getElementById('user-email-display');
@@ -7,6 +42,183 @@ const authLinksLoggedOut = document.getElementById('auth-links-logged-out');
 const authLinksLoggedIn = document.getElementById('auth-links-logged-in');
 const displayUsername = document.getElementById('display-username');
 const linkLogout = document.getElementById('link-logout');
+const requestModal = document.getElementById('requestModal');
+const itemsContainer = document.getElementById('itemsContainer');
+
+// ============================================
+// Phase 4: Data Persistence with localStorage
+// ============================================
+const STORAGE_KEY = 'ipt_demo_v1';
+
+// Load from localStorage
+function loadFromStorage() {
+  console.log('[STORAGE DEBUG] loadFromStorage() called');
+  
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    
+    if (data) {
+      const parsed = JSON.parse(data);
+      console.log('[STORAGE DEBUG] Data loaded from storage');
+      
+      // Initialize window.db with loaded data
+      window.db = parsed;
+      return window.db;
+    } else {
+      console.log('[STORAGE DEBUG] No data in storage, seeding with default data');
+      return seedDefaultData();
+    }
+  } catch (e) {
+    console.error('[STORAGE DEBUG] Error parsing storage data:', e);
+    console.log('[STORAGE DEBUG] Corrupt data detected, seeding with default data');
+    return seedDefaultData();
+  }
+}
+
+// Seed default data
+function seedDefaultData() {
+  console.log('[STORAGE DEBUG] Seeding default data');
+  
+  window.db = {
+    accounts: [
+      {
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@example.com',
+        password: 'Password123!',
+        verified: true,
+        role: 'admin'
+      }
+    ],
+    departments: [
+      { name: 'Engineering', description: 'Engineering Department' },
+      { name: 'HR', description: 'Human Resources Department' }
+    ],
+    employees: [],
+    requests: []
+  };
+  
+  // Save the seeded data
+  saveToStorage();
+  console.log('[STORAGE DEBUG] Default data seeded and saved');
+  
+  return window.db;
+}
+
+// Save to localStorage
+function saveToStorage() {
+  console.log('[STORAGE DEBUG] saveToStorage() called');
+  
+  if (typeof window.db !== 'undefined') {
+    const data = JSON.stringify(window.db);
+    localStorage.setItem(STORAGE_KEY, data);
+    console.log('[STORAGE DEBUG] Data saved to storage');
+  } else {
+    console.warn('[STORAGE DEBUG] window.db is undefined, cannot save');
+  }
+}
+
+console.log('[STORAGE DEBUG] Storage functions defined');
+
+// ============================================
+// End Phase 4
+// ============================================
+
+// Global variable for current user
+let currentUser = null;
+
+// Client-side routing
+function navigateTo(hash) {
+  window.location.hash = hash;
+}
+
+function handleRouting() {
+  const hash = window.location.hash || '#/';
+  const route = hash.slice(1); // Remove the #
+  
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.remove('active');
+  });
+  
+  // Define routes
+  const publicRoutes = ['/', '/login', '/register', '/verify'];
+  const protectedRoutes = ['/profile', '/my-requests'];
+  const adminRoutes = ['/employees', '/accounts', '/departments'];
+  
+  // Check authentication
+  const isAuthenticated = currentUser !== null;
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  
+  // Route handling
+  let showPage = null;
+  
+  if (route === '/' || route === '') {
+    showPage = 'home-page';
+  } else if (route === '/login') {
+    showPage = 'login-page';
+  } else if (route === '/register') {
+    showPage = 'register-page';
+  } else if (route === '/verify') {
+    showPage = 'verify-page';
+  } else if (route === '/profile') {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+    showPage = 'profile-page';
+    renderProfile();  // Phase 5: Render profile on navigation
+  } else if (route === '/my-requests') {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+    showPage = 'myrequests-page';
+    loadRequests();
+  } else if (adminRoutes.includes(route)) {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+    if (!isAdmin) {
+      navigateTo('/profile');
+      return;
+    }
+    if (route === '/employees') {
+      showPage = 'employees-page';
+      loadEmployees();
+    } else if (route === '/accounts') {
+      showPage = 'accounts-page';
+      renderAccountsList();
+    } else if (route === '/departments') {
+      showPage = 'departments-page';
+      renderDepartmentsList();
+    }
+  } else {
+    showPage = 'home-page';
+  }
+  
+  // Show the matching page
+  if (showPage) {
+    const pageElement = document.getElementById(showPage);
+    if (pageElement) {
+      pageElement.classList.add('active');
+    }
+  }
+  
+  // Handle login alert
+  if (loginAlert) {
+    if (showPage === 'login-page' && sessionStorage.getItem('showVerifiedAlert') === 'true') {
+      loginAlert.classList.remove('d-none');
+      sessionStorage.removeItem('showVerifiedAlert');
+    } else {
+      loginAlert.classList.add('d-none');
+    }
+  }
+}
+
+// Listen for hash changes
+window.addEventListener('hashchange', handleRouting);
 const adminAccount = {
   email: "admin@example.com",
   password: "Admin"
@@ -28,45 +240,82 @@ function showView(viewId, showVerifiedAlert = false) {
 }
 
 // Persistent Login Check
+console.log('[AUTH DEBUG] Setting up DOMContentLoaded listener');
 window.addEventListener('DOMContentLoaded', () => {
-  // Initialize admin account if not exists
-  const users = JSON.parse(localStorage.getItem('users')) || [];
+  console.log('[AUTH DEBUG] DOMContentLoaded fired');
+  
+  // ============================================
+  // Phase 4: Initialize storage and load data
+  // ============================================
+  console.log('[STORAGE DEBUG] Calling loadFromStorage()');
+  loadFromStorage();
+  console.log('[STORAGE DEBUG] window.db after load:', window.db);
+  // ============================================
+  // End Phase 4
+  // ============================================
+  
+  // Check for existing auth_token and restore auth state
+  const authToken = localStorage.getItem('auth_token');
+  console.log('[AUTH DEBUG] Found auth_token:', authToken);
+  
+  // Use window.db.accounts (from loadFromStorage)
+  const accounts = window.db.accounts || [];
   const adminEmail = 'admin@example.com';
   
-  if (!users.find(u => u.email === adminEmail)) {
+  // Check if admin exists (backup - should already be seeded)
+  if (!accounts.find(a => a.email === adminEmail)) {
     const adminUser = {
       firstName: 'Admin',
       lastName: 'User',
       email: adminEmail,
-      pass: 'Admin',
+      password: 'Password123!',
+      verified: true,
       role: 'admin'
     };
-    users.push(adminUser);
-    localStorage.setItem('users', JSON.stringify(users));
+    accounts.push(adminUser);
+    window.db.accounts = accounts;
+    saveToStorage();
+    console.log('[AUTH DEBUG] Created admin account');
   }
   
-  const savedUser = JSON.parse(localStorage.getItem('currentUser'));
-  if (savedUser) {
-    updateUIForLoggedInUser(savedUser);
-    showView('profile-view');
+  if (authToken) {
+    const account = accounts.find(a => a.email === authToken);
+    if (account) {
+      console.log('[AUTH DEBUG] Restoring session for:', account.email);
+      currentUser = account;
+      setAuthState(true, account);
+    } else {
+      console.log('[AUTH DEBUG] auth_token invalid, clearing');
+      localStorage.removeItem('auth_token');
+    }
   }
+  
+  // Set default hash if empty
+  if (!window.location.hash) {
+    window.location.hash = '#/';
+  }
+  
+  // Initialize routing
+  handleRouting();
   
   // Initialize department dropdown for employees
   updateEmployeeDeptDropdown();
+  
+  console.log('[AUTH DEBUG] Initialization complete');
 });
 
-// Navigation Listeners
-document.getElementById('link-login').onclick = () => showView('login-view', false);
-document.getElementById('link-register').onclick = () => showView('register-view');
-document.getElementById('btn-get-started').onclick = () => showView('register-view');
-document.getElementById('btn-cancel-reg').onclick = () => showView('home-view');
+// Navigation Listeners - Using hash-based routing
+document.getElementById('link-login').onclick = (e) => { e.preventDefault(); navigateTo('/login'); };
+document.getElementById('link-register').onclick = (e) => { e.preventDefault(); navigateTo('/register'); };
+document.getElementById('btn-get-started').onclick = (e) => { e.preventDefault(); navigateTo('/register'); };
+document.getElementById('btn-cancel-reg').onclick = (e) => { e.preventDefault(); navigateTo('/'); };
 
 // Profile Link
 const linkProfile = document.getElementById('link-profile');
 if (linkProfile) {
   linkProfile.onclick = (e) => {
     e.preventDefault();
-    showView('profile-view');
+    navigateTo('/profile');
   };
 }
 
@@ -75,7 +324,7 @@ const linkAccounts = document.getElementById('link-accounts');
 if (linkAccounts) {
   linkAccounts.onclick = (e) => {
     e.preventDefault();
-    showView('accounts-view');
+    navigateTo('/accounts');
     renderAccountTable();
   };
 }
@@ -85,7 +334,7 @@ const linkDepartments = document.getElementById('link-departments');
 if (linkDepartments) {
   linkDepartments.onclick = (e) => {
     e.preventDefault();
-    showView('departments-view');
+    navigateTo('/departments');
     renderDeptTable();
   };
 }
@@ -95,67 +344,190 @@ const linkMyRequests = document.getElementById('link-my-requests');
 if (linkMyRequests) {
   linkMyRequests.onclick = (e) => {
     e.preventDefault();
-    showView('myrequests-view');
+    navigateTo('/my-requests');
     loadRequests();
   };
 }
 
 const btnCancelLogin = document.getElementById('btn-cancel-login');
-if (btnCancelLogin) btnCancelLogin.onclick = () => showView('home-view');
+if (btnCancelLogin) btnCancelLogin.onclick = (e) => { e.preventDefault(); navigateTo('/'); };
 
 const btnGoLogin = document.getElementById('btn-go-login');
-if (btnGoLogin) btnGoLogin.onclick = () => showView('login-view', false);
+if (btnGoLogin) btnGoLogin.onclick = (e) => { e.preventDefault(); navigateTo('/login'); };
 
 // Registration Logic
+console.log('[AUTH DEBUG] Registration form submitted');
 registerForm.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const newUser = {
-    firstName: document.getElementById('firstName').value,
-    lastName: document.getElementById('lastName').value,
-    email: document.getElementById('regEmail').value,
-    pass: document.getElementById('regPass').value,
-    role: 'user'
-  };
+  const firstName = document.getElementById('firstName').value;
+  const lastName = document.getElementById('lastName').value;
+  const email = document.getElementById('regEmail').value;
+  const password = document.getElementById('regPass').value;
+  
+  console.log('[AUTH DEBUG] Registration attempt for email:', email);
+  console.log('[AUTH DEBUG] Password length:', password.length);
+  
+  // Validate password minimum 6 characters
+  if (password.length < 6) {
+    showToast('Password must be at least 6 characters!', 'error');
+    console.log('[AUTH DEBUG] Password validation failed');
+    return;
+  }
+  
+  // Check for window.db.accounts existence
+  console.log('[AUTH DEBUG] window.db.accounts exists:', typeof window.db !== 'undefined' && typeof window.db.accounts !== 'undefined');
+  
+  // Use window.db.accounts or fallback to localStorage
+  let accounts = [];
+  if (typeof window.db !== 'undefined' && Array.isArray(window.db.accounts)) {
+    accounts = window.db.accounts;
+  } else {
+    accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+    console.log('[AUTH DEBUG] Using localStorage.accounts, count:', accounts.length);
+  }
 
-  const users = JSON.parse(localStorage.getItem('users')) || [];
-
-  if (users.find(u => u.email === newUser.email)) {
-    alert('Email already registered!');
+  // Check if email already exists
+  if (accounts.find(a => a.email === email)) {
+    showToast('Email already registered!', 'error');
+    console.log('[AUTH DEBUG] Email already exists');
     return;
   }
 
-  users.push(newUser);
-  localStorage.setItem('users', JSON.stringify(users));
+  // Create new account with verified: false
+  const newUser = {
+    firstName: firstName,
+    lastName: lastName,
+    email: email,
+    password: password,
+    verified: false,
+    role: 'user'
+  };
+  
+  console.log('[AUTH DEBUG] New account created:', { ...newUser, password: '***' });
 
-  if (userEmailDisplay) userEmailDisplay.textContent = newUser.email;
-  showView('verify-view');
+  accounts.push(newUser);
+  
+  // Save to window.db.accounts if available, otherwise localStorage
+  if (typeof window.db !== 'undefined' && Array.isArray(window.db.accounts)) {
+    window.db.accounts = accounts;
+  } else {
+    localStorage.setItem('accounts', JSON.stringify(accounts));
+  }
+  
+  // Save to storage using new method
+  saveToStorage();
+  console.log('[STORAGE DEBUG] Account created, saved to storage');
+  
+  // Store unverified email for verification flow
+  localStorage.setItem('unverified_email', email);
+  console.log('[AUTH DEBUG] Stored unverified_email:', email);
+
+  if (userEmailDisplay) userEmailDisplay.textContent = email;
+  console.log('[AUTH DEBUG] Navigating to /verify');
+  navigateTo('/verify');
 });
 
-// Simulation Button
+// Simulation Button - Email Verification
+console.log('[AUTH DEBUG] Setting up verify button listener');
 const btnSimulateVerify = document.getElementById('btn-simulate-verify');
 if (btnSimulateVerify) {
   btnSimulateVerify.addEventListener('click', () => {
-    showView('login-view', true);
+    console.log('[AUTH DEBUG] Simulate verification clicked');
+    
+    // Get unverified email
+    const unverifiedEmail = localStorage.getItem('unverified_email');
+    console.log('[AUTH DEBUG] Retrieved unverified_email:', unverifiedEmail);
+    
+    if (!unverifiedEmail) {
+      alert('No pending verification email found!');
+      console.log('[AUTH DEBUG] ERROR: No unverified_email found');
+      return;
+    }
+    
+    // Find account and set verified: true
+    let accounts = [];
+    if (typeof window.db !== 'undefined' && Array.isArray(window.db.accounts)) {
+      accounts = window.db.accounts;
+    } else {
+      accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+    }
+    
+    console.log('[AUTH DEBUG] Searching for account:', unverifiedEmail);
+    const accountIndex = accounts.findIndex(a => a.email === unverifiedEmail);
+    console.log('[AUTH DEBUG] Account index found:', accountIndex);
+    
+    if (accountIndex !== -1) {
+      accounts[accountIndex].verified = true;
+      console.log('[AUTH DEBUG] Account verified:', { ...accounts[accountIndex], password: '***' });
+      
+      // Save to storage
+      if (typeof window.db !== 'undefined' && Array.isArray(window.db.accounts)) {
+        window.db.accounts = accounts;
+      } else {
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+      }
+      
+      // Save using new storage method
+      saveToStorage();
+      console.log('[STORAGE DEBUG] Account verified, saved to storage');
+      
+      // Clear unverified_email
+      localStorage.removeItem('unverified_email');
+      console.log('[AUTH DEBUG] Cleared unverified_email');
+      
+      // Set flag for login page
+      sessionStorage.setItem('showVerifiedAlert', 'true');
+      console.log('[AUTH DEBUG] Set showVerifiedAlert, navigating to /login');
+      navigateTo('/login');
+    } else {
+      console.log('[AUTH DEBUG] ERROR: Account not found for email:', unverifiedEmail);
+      alert('Account not found!');
+    }
   });
 }
 
 // Login Logic
+console.log('[AUTH DEBUG] Setting up login form listener');
 if (loginForm) {
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
-    const pass = document.getElementById('loginPass').value;
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-
-    const user = users.find(u => u.email === email && u.pass === pass);
-
-    if (user) {
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      updateUIForLoggedInUser(user);
-      showView('profile-view');
+    const password = document.getElementById('loginPass').value;
+    console.log('[AUTH DEBUG] Login attempt for email:', email);
+    
+    // Use window.db.accounts or fallback to localStorage
+    let accounts = [];
+    if (typeof window.db !== 'undefined' && Array.isArray(window.db.accounts)) {
+      accounts = window.db.accounts;
     } else {
-      alert('Invalid email or password!');
+      accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+      console.log('[AUTH DEBUG] Using localStorage.accounts, count:', accounts.length);
+    }
+
+    // Find account with matching email, password, AND verified: true
+    const user = accounts.find(a => a.email === email && a.password === password && a.verified === true);
+    console.log('[AUTH DEBUG] User found:', user ? { ...user, password: '***' } : 'null');
+    
+    if (user) {
+      // Save auth_token = email in localStorage
+      localStorage.setItem('auth_token', email);
+      console.log('[AUTH DEBUG] auth_token saved:', email);
+      
+      // Call setAuthState(true, user)
+      setAuthState(true, user);
+      console.log('[AUTH DEBUG] setAuthState called, navigating to /profile');
+      navigateTo('/profile');
+    } else {
+      // Check if user exists but not verified
+      const unverifiedUser = accounts.find(a => a.email === email && a.password === password);
+      if (unverifiedUser && unverifiedUser.verified === false) {
+        console.log('[AUTH DEBUG] User exists but not verified');
+        showToast('Please verify your email first!', 'warning');
+      } else {
+        console.log('[AUTH DEBUG] Invalid credentials');
+        showToast('Invalid email or password!', 'error');
+      }
     }
   });
 }
@@ -171,21 +543,133 @@ function updateUIForLoggedInUser(user) {
   document.getElementById('profile-email-display').textContent = user.email;
   document.getElementById('profile-role-display').textContent = user.role;
 
-  // Role-based visibility for Admin dropdown items
-  const adminElements = document.querySelectorAll('.role-admin');
-  adminElements.forEach(el => {
-    el.style.display = (user.role.toLowerCase() === 'admin') ? 'block' : 'none';
-  });
+  // Update body classes for role-based visibility
+  document.body.classList.remove('not-authenticated');
+  document.body.classList.add('authenticated');
+  if (user.role.toLowerCase() === 'admin') {
+    document.body.classList.add('is-admin');
+  }
 }
 
+// Auth State Management - Set Auth State Function
+console.log('[AUTH DEBUG] Defining setAuthState function');
+function setAuthState(isAuth, user) {
+  console.log('[AUTH DEBUG] setAuthState called:', { isAuth, user: user ? { ...user, password: '***' } : null });
+  
+  if (isAuth && user) {
+    // Update currentUser
+    currentUser = user;
+    
+    // Toggle body classes
+    document.body.classList.remove('not-authenticated');
+    document.body.classList.add('authenticated');
+    
+    // If admin, add is-admin class
+    if (user.role && user.role.toLowerCase() === 'admin') {
+      document.body.classList.add('is-admin');
+      console.log('[AUTH DEBUG] Admin role detected, adding is-admin class');
+    } else {
+      document.body.classList.remove('is-admin');
+    }
+    
+    // Update UI for logged in user
+    authLinksLoggedOut.classList.add('d-none');
+    authLinksLoggedIn.classList.remove('d-none');
+    displayUsername.textContent = user.firstName;
+    
+    // Populate Profile View
+    document.getElementById('profile-name-display').textContent = `${user.firstName} ${user.lastName}`;
+    document.getElementById('profile-email-display').textContent = user.email;
+    document.getElementById('profile-role-display').textContent = user.role;
+    
+    console.log('[AUTH DEBUG] Auth state set to authenticated');
+  } else {
+    // Logout - clear auth state
+    currentUser = null;
+    
+    // Clear auth_token
+    localStorage.removeItem('auth_token');
+    console.log('[AUTH DEBUG] Removed auth_token');
+    
+    // Toggle body classes
+    document.body.classList.remove('authenticated', 'is-admin');
+    document.body.classList.add('not-authenticated');
+    
+    // Update UI for logged out user
+    authLinksLoggedOut.classList.remove('d-none');
+    authLinksLoggedIn.classList.add('d-none');
+    
+    console.log('[AUTH DEBUG] Auth state set to not authenticated');
+  }
+}
+
+// ============================================
+// Phase 5: Profile Page
+// ============================================
+console.log('[PROFILE DEBUG] Defining renderProfile function');
+function renderProfile() {
+  console.log('[PROFILE DEBUG] renderProfile() called');
+  
+  if (!currentUser) {
+    console.log('[PROFILE DEBUG] No currentUser, redirecting to login');
+    navigateTo('/login');
+    return;
+  }
+  
+  // Display user's name, email, role
+  const nameDisplay = document.getElementById('profile-name-display');
+  const emailDisplay = document.getElementById('profile-email-display');
+  const roleDisplay = document.getElementById('profile-role-display');
+  
+  if (nameDisplay) {
+    nameDisplay.textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+  }
+  if (emailDisplay) {
+    emailDisplay.textContent = currentUser.email;
+  }
+  if (roleDisplay) {
+    roleDisplay.textContent = currentUser.role || 'user';
+  }
+  
+  console.log('[PROFILE DEBUG] Profile rendered for:', currentUser.email);
+}
+
+// Reset Data Function - Call in browser console: resetAppData()
+window.resetAppData = function() {
+  console.log('[APP RESET] Clearing all app data...');
+  localStorage.removeItem('ipt_demo_v1');
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('unverified_email');
+  sessionStorage.clear();
+  alert('App data reset! Refresh the page to re-initialize.');
+  console.log('[APP RESET] Data cleared. Please refresh the page.');
+};
+
+// Edit Profile button handler
+const btnEditProfile = document.getElementById('btn-edit-profile');
+if (btnEditProfile) {
+  btnEditProfile.onclick = (e) => {
+    e.preventDefault();
+    console.log('[PROFILE DEBUG] Edit Profile clicked');
+    alert('Edit Profile functionality coming soon!\n\nYou can update your profile details in a future version.');
+  };
+}
+// ============================================
+// End Phase 5
+// ============================================
+
 // Logout Logic
+console.log('[AUTH DEBUG] Setting up logout listener');
 if (linkLogout) {
   linkLogout.onclick = (e) => {
     e.preventDefault();
-    localStorage.removeItem('currentUser');
-    authLinksLoggedOut.classList.remove('d-none');
-    authLinksLoggedIn.classList.add('d-none');
-    showView('home-view');
+    console.log('[AUTH DEBUG] Logout clicked');
+    
+    // Call setAuthState(false)
+    setAuthState(false);
+    
+    console.log('[AUTH DEBUG] Navigating to /');
+    navigateTo('/');
   };
 }
 
@@ -195,7 +679,7 @@ document.querySelectorAll('.role-admin .dropdown-item').forEach(item => {
   if (item.textContent === 'Employees') {
     item.onclick = (e) => {
       e.preventDefault();
-      showView('employees-view');
+      navigateTo('/employees');
       loadEmployees();
       updateEmployeeDeptDropdown();
     };
@@ -209,6 +693,7 @@ if (btnAddEmployee) {
     document.getElementById('employeeModalTitle').textContent = 'Add Employee';
     document.getElementById('employeeForm').reset();
     document.getElementById('empId').removeAttribute('data-edit-id');
+    editIndex = -1;  // Reset edit index
     updateEmployeeDeptDropdown();
     const modal = new bootstrap.Modal(document.getElementById('employeeModal'));
     modal.show();
@@ -254,42 +739,57 @@ if (btnSaveEmployee) {
 
 // Load Employees Table
 function loadEmployees() {
-  const employees = JSON.parse(localStorage.getItem('employees')) || [];
+  // Use window.db.employees
+  const employees = window.db.employees || [];
   const tbody = document.getElementById('tableBody');
+  if (!tbody) return;
   
   if (employees.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No employees.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = employees.map(emp => `
+  // Get department names for display
+  const departments = window.db.accounts || [];
+  const deptMap = {};
+  if (window.db.departments) {
+    window.db.departments.forEach(d => deptMap[d.name] = d.name);
+  }
+
+  tbody.innerHTML = employees.map(emp => {
+    const deptName = emp.dept || '-';
+    return `
     <tr>
       <td>${emp.id}</td>
-      <td>${emp.name}</td>
+      <td>${emp.email || '-'}</td>
       <td>${emp.position}</td>
-      <td>${emp.dept}</td>
+      <td>${deptName}</td>
       <td>
         <button class="btn btn-sm btn-warning" onclick="editEmployee('${emp.id}')">Edit</button>
         <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${emp.id}')">Delete</button>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
+}
+
+// Render Employees Table (alias for loadEmployees)
+function renderEmployeesTable() {
+  loadEmployees();
 }
 
 // Edit Employee
 window.editEmployee = function(id) {
-  const employees = JSON.parse(localStorage.getItem('employees')) || [];
+  const employees = window.db.employees || [];
   const emp = employees.find(e => e.id === id);
   if (!emp) return;
 
   document.getElementById('employeeModalTitle').textContent = 'Edit Employee';
   document.getElementById('empId').value = emp.id;
   document.getElementById('empId').setAttribute('data-edit-id', emp.id);
-  document.getElementById('empName').value = emp.name;
   document.getElementById('empEmail').value = emp.email || '';
-  document.getElementById('empPosition').value = emp.position;
+  document.getElementById('empPosition').value = emp.position || '';
   updateEmployeeDeptDropdown();
-  document.getElementById('empDept').value = emp.dept;
+  document.getElementById('empDept').value = emp.dept || '';
   document.getElementById('empHireDate').value = emp.hireDate || '';
 
   const modal = new bootstrap.Modal(document.getElementById('employeeModal'));
@@ -300,9 +800,12 @@ window.editEmployee = function(id) {
 window.deleteEmployee = function(id) {
   if (!confirm('Are you sure you want to delete this employee?')) return;
   
-  let employees = JSON.parse(localStorage.getItem('employees')) || [];
+  let employees = window.db.employees || [];
   employees = employees.filter(e => e.id !== id);
-  localStorage.setItem('employees', JSON.stringify(employees));
+  window.db.employees = employees;
+  empList = employees;
+  saveToStorage();
+  console.log('[ADMIN DEBUG] Employee deleted:', id);
   loadEmployees();
 };
 
@@ -346,15 +849,46 @@ function saveEmp() {
         return;
     }
 
-    const employee = { id, email, position, dept, hireDate };
-
-    if (editIndex === -1) {
-        empList.push(employee);
-    } else {
-        empList[editIndex] = employee;
+    // Validate: user email must match existing account
+    const accounts = window.db.accounts || [];
+    const accountExists = accounts.some(a => a.email === email);
+    if (!accountExists) {
+        alert('User email must match an existing account!');
+        return;
     }
 
-    renderEmpTable();
+    const employee = { id, email, position, dept, hireDate };
+
+    // Use window.db.employees
+    if (!window.db.employees) {
+        window.db.employees = [];
+    }
+    
+    const employees = window.db.employees;
+    const editId = document.getElementById('empId').getAttribute('data-edit-id');
+    
+    if (editId && editId !== id) {
+        // ID changed, delete old record
+        const oldIndex = employees.findIndex(e => e.id === editId);
+        if (oldIndex !== -1) employees.splice(oldIndex, 1);
+    }
+    
+    // Check if employee with this ID already exists
+    const existingIndex = employees.findIndex(e => e.id === id);
+    if (existingIndex !== -1) {
+        employees[existingIndex] = employee;
+    } else {
+        employees.push(employee);
+    }
+    
+    // Save to storage
+    saveToStorage();
+    console.log('[ADMIN DEBUG] Employee saved:', employee);
+    
+    // Also update local empList for backward compatibility
+    empList = window.db.employees;
+    
+    loadEmployees();
     hideEmpForm();
 }
 
@@ -405,7 +939,18 @@ function editEmp(index) {
 
 function deleteEmp(index) {
     if (confirm('Are you sure you want to delete this employee?')) {
-        empList.splice(index, 1);
+        // Use window.db.employees
+        if (window.db.employees) {
+            window.db.employees.splice(index, 1);
+            empList = window.db.employees;
+        } else {
+            empList.splice(index, 1);
+        }
+        
+        // Save to storage
+        saveToStorage();
+        console.log('[STORAGE DEBUG] Employee deleted, calling saveToStorage()');
+        
         renderEmpTable();
     }
 }
@@ -454,23 +999,39 @@ function saveAccount() {
 
     const account = { firstName, lastName, email, password, role, verified };
 
+    // Use window.db.accounts
+    if (!window.db.accounts) {
+        window.db.accounts = [];
+    }
+    
     if (accountEditIndex === -1) {
         // Add new account
-        accountList.push(account);
+        window.db.accounts.push(account);
     } else {
         // Edit existing account
-        accountList[accountEditIndex] = account;
+        window.db.accounts[accountEditIndex] = account;
     }
-
+    
+    // Update local accountList for backward compatibility
+    accountList = window.db.accounts;
+    
+    // Save to storage
+    saveToStorage();
+    console.log('[STORAGE DEBUG] Account saved, calling saveToStorage()');
+    
     renderAccountTable();
     hideAccountForm();
 }
 
 function renderAccountTable() {
     const tableBody = document.getElementById('accountTableBody');
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
-    if (accountList.length === 0) {
+    // Use window.db.accounts
+    const accounts = window.db.accounts || [];
+    
+    if (accounts.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="5" class="text-center text-muted">No accounts.</td>
@@ -479,24 +1040,58 @@ function renderAccountTable() {
         return;
     }
 
-    accountList.forEach((account, index) => {
+    accounts.forEach((account, index) => {
+        const isSelf = currentUser && currentUser.email === account.email;
+        const deleteBtn = isSelf 
+            ? '<span class="text-muted">Cannot delete</span>' 
+            : `<button class="btn btn-sm btn-danger" onclick="deleteAccount(${index})">Delete</button>`;
+        
         tableBody.innerHTML += `
             <tr>
                 <td>${account.firstName} ${account.lastName}</td>
                 <td>${account.email}</td>
                 <td>${account.role}</td>
-                <td>${account.verified ? 'Yes' : 'No'}</td>
+                <td>${account.verified ? '✅' : '❌'}</td>
                 <td>
                     <button class="btn btn-sm btn-warning" onclick="editAccount(${index})">Edit</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteAccount(${index})">Delete</button>
+                    <button class="btn btn-sm btn-info" onclick="resetPassword(${index})">Reset PW</button>
+                    ${deleteBtn}
                 </td>
             </tr>
         `;
     });
 }
 
+// Helper function alias as per spec
+function renderAccountsList() {
+    renderAccountTable();
+}
+
+// Reset Password function
+function resetPassword(index) {
+    const accounts = window.db.accounts || [];
+    const account = accounts[index];
+    if (!account) return;
+    
+    const newPassword = prompt('Enter new password (min 6 characters):');
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters!');
+        return;
+    }
+    
+    accounts[index].password = newPassword;
+    window.db.accounts = accounts;
+    saveToStorage();
+    console.log('[ADMIN DEBUG] Password reset for:', account.email);
+    alert('Password has been reset!');
+}
+
 function editAccount(index) {
-    const account = accountList[index];
+    const accounts = window.db.accounts || [];
+    const account = accounts[index];
+    if (!account) return;
 
     document.getElementById('accountFirstName').value = account.firstName;
     document.getElementById('accountLastName').value = account.lastName;
@@ -510,28 +1105,52 @@ function editAccount(index) {
 }
 
 function deleteAccount(index) {
+    const accounts = window.db.accounts || [];
+    const account = accounts[index];
+    
+    // Prevent self-deletion
+    if (currentUser && currentUser.email === account.email) {
+        alert('You cannot delete your own account!');
+        return;
+    }
+    
     if (confirm('Are you sure you want to delete this account?')) {
-        accountList.splice(index, 1);
+        accounts.splice(index, 1);
+        window.db.accounts = accounts;
+        saveToStorage();
+        console.log('[ADMIN DEBUG] Account deleted:', account.email);
         renderAccountTable();
     }
 }
 
 // Departments Management Functions
-let deptList = JSON.parse(localStorage.getItem('departments')) || [
-    { name: 'Engineering', description: 'Software team' },
-    { name: 'HR', description: 'Human Resources' }
-];
+// Use window.db.departments (initialized by loadFromStorage)
+let deptList = [];
+if (window.db && window.db.departments) {
+    deptList = window.db.departments;
+} else {
+    deptList = [
+        { name: 'Engineering', description: 'Software team' },
+        { name: 'HR', description: 'Human Resources' }
+    ];
+}
 let deptEditIndex = -1;
 
-// Save departments to localStorage
+// Save departments to localStorage (and unified storage)
 function saveDepartmentsToStorage() {
-    localStorage.setItem('departments', JSON.stringify(deptList));
+    // Update window.db.departments
+    if (!window.db.departments) {
+        window.db.departments = [];
+    }
+    window.db.departments = deptList;
+    
+    // Save to unified storage
+    saveToStorage();
+    console.log('[STORAGE DEBUG] Departments saved, calling saveToStorage()');
 }
 
-// Initialize default departments if none exist
-if (!localStorage.getItem('departments')) {
-    saveDepartmentsToStorage();
-}
+// Initialize default departments if none exist (now handled by loadFromStorage)
+// This block is kept for backward compatibility but loadFromStorage handles it now
 
 function showDeptForm() {
     document.getElementById('departmentForm').style.display = 'block';
@@ -580,9 +1199,13 @@ function saveDept() {
 
 function renderDeptTable() {
     const tableBody = document.getElementById('departmentTableBody');
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
-    if (deptList.length === 0) {
+    // Render list from window.db.departments
+    const departments = window.db.departments || [];
+    
+    if (departments.length === 0) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="3" class="text-center text-muted">No departments.</td>
@@ -591,7 +1214,7 @@ function renderDeptTable() {
         return;
     }
 
-    deptList.forEach((dept, index) => {
+    departments.forEach((dept, index) => {
         tableBody.innerHTML += `
             <tr>
                 <td>${dept.name}</td>
@@ -605,21 +1228,36 @@ function renderDeptTable() {
     });
 }
 
+// Helper function alias as per spec
+function renderDepartmentsList() {
+    renderDeptTable();
+}
+
+// Add Department - show "Not implemented" alert
+function showDeptForm() {
+    alert('Add Department is not implemented yet.');
+}
+
 function editDept(index) {
-    const dept = deptList[index];
+    const departments = window.db.departments || [];
+    const dept = departments[index];
+    if (!dept) return;
 
     document.getElementById('deptName').value = dept.name;
     document.getElementById('deptDescription').value = dept.description;
 
     deptEditIndex = index;
-    showDeptForm();
+    document.getElementById('departmentForm').style.display = 'block';
 }
 
 function deleteDept(index) {
     if (confirm('Delete this department?')) {
-        const deptName = deptList[index].name;
-        deptList.splice(index, 1);
-        saveDepartmentsToStorage();
+        const departments = window.db.departments || [];
+        departments.splice(index, 1);
+        window.db.departments = departments;
+        deptList = departments;
+        saveToStorage();
+        console.log('[ADMIN DEBUG] Department deleted');
         renderDeptTable();
         updateEmployeeDeptDropdown();
     }
@@ -633,7 +1271,10 @@ function updateEmployeeDeptDropdown() {
     const currentValue = select.value;
     select.innerHTML = '<option value="">Select Department</option>';
     
-    deptList.forEach(dept => {
+    // Use window.db.departments
+    const departments = window.db.departments || [];
+    
+    departments.forEach(dept => {
         const option = document.createElement('option');
         option.value = dept.name;
         option.textContent = dept.name;
@@ -641,42 +1282,15 @@ function updateEmployeeDeptDropdown() {
     });
     
     // Restore selected value if it still exists
-    if (currentValue && deptList.find(d => d.name === currentValue)) {
+    if (currentValue && departments.find(d => d.name === currentValue)) {
         select.value = currentValue;
     }
 }
 
 // Persistent Login Check
-window.addEventListener('DOMContentLoaded', () => {
-  // Initialize admin account if not exists
-  const users = JSON.parse(localStorage.getItem('users')) || [];
-  const adminEmail = 'admin@example.com';
-  
-  if (!users.find(u => u.email === adminEmail)) {
-    const adminUser = {
-      firstName: 'Admin',
-      lastName: 'User',
-      email: adminEmail,
-      pass: 'Admin',
-      role: 'admin'
-    };
-    users.push(adminUser);
-    localStorage.setItem('users', JSON.stringify(users));
-  }
-  
-  const savedUser = JSON.parse(localStorage.getItem('currentUser'));
-  if (savedUser) {
-    updateUIForLoggedInUser(savedUser);
-    showView('profile-view');
-  }
-});
-
 // ========================
 // My Requests Functions
 // ========================
-
-const requestModal = document.getElementById('requestModal');
-const itemsContainer = document.getElementById('itemsContainer');
 
 function openRequestModal() {
   if (requestModal) {
@@ -701,14 +1315,8 @@ function addItem() {
 
   const itemCount = itemsContainer.children.length;
   
-  // Logic:
-  // - 1st item: + only (add)
-  // - 2nd+ items: x only (delete)
-  // - Clicking + on 1st adds new row and turns + to x
-  // - When only 1 item remains, show + again
-  
   if (itemCount === 0) {
-    // First item - show only + button (add)
+    // First item - show + button (add)
     row.innerHTML = `
       <input type="text" placeholder="Item name" class="form-control">
       <input type="number" value="1" min="1" class="form-control" style="width: 80px;">
@@ -717,12 +1325,12 @@ function addItem() {
       </div>
     `;
   } else {
-    // Second or more items - show only x button (delete)
+    // Second or more items - show × button (delete)
     row.innerHTML = `
       <input type="text" placeholder="Item name" class="form-control">
       <input type="number" value="1" min="1" class="form-control" style="width: 80px;">
       <div class="btn-container-single">
-        <button class="btn btn-danger" onclick="removeItem(this)">x</button>
+        <button class="btn btn-danger" onclick="removeItem(this)">×</button>
       </div>
     `;
   }
@@ -779,23 +1387,28 @@ function submitRequest() {
 
   const requestType = document.getElementById('requestType').value;
   
-  // Create new request
+  // Create new request with employeeEmail
   const newRequest = {
     id: Date.now(),
     type: requestType,
     items: items,
     status: 'Pending',
     date: new Date().toLocaleDateString(),
-    userEmail: JSON.parse(localStorage.getItem('currentUser'))?.email || 'user@example.com'
+    employeeEmail: currentUser ? currentUser.email : 'user@example.com'
   };
 
-  // Save to localStorage
-  const requests = JSON.parse(localStorage.getItem('requests')) || [];
-  requests.push(newRequest);
-  localStorage.setItem('requests', JSON.stringify(requests));
+  // Use window.db.requests
+  if (!window.db.requests) {
+      window.db.requests = [];
+  }
+  window.db.requests.push(newRequest);
+  
+  // Save to unified storage
+  saveToStorage();
+  console.log('[STORAGE DEBUG] Request submitted, calling saveToStorage()');
 
   console.log('Submitted Items:', items);
-  alert('Request Submitted!');
+  showToast('Request submitted successfully!', 'success');
   closeRequestModal();
   
   // Clear the form for next time
@@ -818,13 +1431,19 @@ function loadRequests() {
   const requestsTableBody = document.getElementById('requestsTableBody');
   if (!requestsTableBody) return;
 
-  const requests = JSON.parse(localStorage.getItem('requests')) || [];
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  // Use window.db.requests
+  const requests = window.db.requests || [];
   
   // Filter requests based on role - Admin sees all, User sees only their own
   let filteredRequests = requests;
   if (currentUser && currentUser.role !== 'admin') {
-    filteredRequests = requests.filter(r => r.userEmail === currentUser.email);
+    // Filter by employeeEmail for regular users
+    filteredRequests = requests.filter(r => r.employeeEmail === currentUser.email);
+  }
+
+  if (filteredRequests.length === 0) {
+    requestsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">You have no requests yet.</td></tr>';
+    return;
   }
 
   if (filteredRequests.length === 0) {
@@ -854,8 +1473,11 @@ function loadRequests() {
         statusBadge = '<span class="badge bg-warning">Pending</span>';
     }
     
-    // Show action buttons only for Pending/Approved status (admin can change status)
-    const showActions = req.status !== 'Delivered' && req.status !== 'Cancelled';
+    // Show action buttons only for Pending/Approved status AND if user is admin
+    // Use global currentUser variable instead of localStorage
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    const showDeliveredCancelled = isAdmin && req.status !== 'Delivered' && req.status !== 'Cancelled';
+    const showDelete = isAdmin;
     
     return `
       <tr>
@@ -864,69 +1486,74 @@ function loadRequests() {
         <td>${itemsList}</td>
         <td>${statusBadge}</td>
         <td>${req.date}</td>
-        <td class="role-admin">
-          ${showActions ? `
-            <button class="btn btn-sm btn-success me-1" onclick="markDelivered(${req.id})">Delivered</button>
-            <button class="btn btn-sm btn-danger" onclick="markCancelled(${req.id})">Cancelled</button>
-          ` : `
-            <span class="text-muted small">No actions available</span>
-          `}
+        <td>
+          ${showDeliveredCancelled ? `
+            <button class="btn btn-sm btn-success" onclick="markDelivered(${req.id})" title="Delivered">✓</button>
+            <button class="btn btn-sm btn-danger" onclick="markCancelled(${req.id})" title="Cancelled">✗</button>
+          ` : ''}
+          ${showDelete ? `
+            <button class="btn btn-sm btn-dark" onclick="deleteRequest(${req.id})" title="Delete">🗑</button>
+          ` : ''}
         </td>
       </tr>
     `;
   }).join('');
-
-  // Show/hide actions column based on role
-  updateActionsColumn();
 }
 
 function approveRequest(id) {
-  const requests = JSON.parse(localStorage.getItem('requests')) || [];
-  const index = requests.findIndex(r => r.id === id);
+  if (!window.db.requests) window.db.requests = [];
+  const index = window.db.requests.findIndex(r => r.id === id);
   if (index !== -1) {
-    requests[index].status = 'Approved';
-    localStorage.setItem('requests', JSON.stringify(requests));
+    window.db.requests[index].status = 'Approved';
+    saveToStorage();
+    console.log('[STORAGE DEBUG] Request approved, calling saveToStorage()');
     loadRequests();
   }
 }
 
 function rejectRequest(id) {
-  const requests = JSON.parse(localStorage.getItem('requests')) || [];
-  const index = requests.findIndex(r => r.id === id);
+  if (!window.db.requests) window.db.requests = [];
+  const index = window.db.requests.findIndex(r => r.id === id);
   if (index !== -1) {
-    requests[index].status = 'Rejected';
-    localStorage.setItem('requests', JSON.stringify(requests));
+    window.db.requests[index].status = 'Rejected';
+    saveToStorage();
+    console.log('[STORAGE DEBUG] Request rejected, calling saveToStorage()');
     loadRequests();
   }
 }
 
 function markDelivered(id) {
-  const requests = JSON.parse(localStorage.getItem('requests')) || [];
-  const index = requests.findIndex(r => r.id === id);
+  if (!window.db.requests) window.db.requests = [];
+  const index = window.db.requests.findIndex(r => r.id === id);
   if (index !== -1) {
-    requests[index].status = 'Delivered';
-    localStorage.setItem('requests', JSON.stringify(requests));
+    window.db.requests[index].status = 'Delivered';
+    saveToStorage();
+    console.log('[STORAGE DEBUG] Request marked delivered, calling saveToStorage()');
     loadRequests();
   }
 }
 
 function markCancelled(id) {
-  const requests = JSON.parse(localStorage.getItem('requests')) || [];
-  const index = requests.findIndex(r => r.id === id);
+  if (!window.db.requests) window.db.requests = [];
+  const index = window.db.requests.findIndex(r => r.id === id);
   if (index !== -1) {
-    requests[index].status = 'Cancelled';
-    localStorage.setItem('requests', JSON.stringify(requests));
+    window.db.requests[index].status = 'Cancelled';
+    saveToStorage();
+    console.log('[STORAGE DEBUG] Request cancelled, calling saveToStorage()');
     loadRequests();
   }
 }
 
-function updateActionsColumn() {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  const actionCells = document.querySelectorAll('#requestsTableBody .role-admin');
+function deleteRequest(id) {
+  if (!confirm('Are you sure you want to delete this request?')) return;
   
-  if (currentUser && currentUser.role === 'admin') {
-    actionCells.forEach(cell => cell.style.display = '');
-  } else {
-    actionCells.forEach(cell => cell.style.display = 'none');
-  }
+  if (!window.db.requests) window.db.requests = [];
+  window.db.requests = window.db.requests.filter(r => r.id !== id);
+  saveToStorage();
+  console.log('[STORAGE DEBUG] Request deleted, calling saveToStorage()');
+  loadRequests();
+}
+
+function updateActionsColumn() {
+  // This function is no longer needed - kept for reference
 }
