@@ -1,36 +1,39 @@
-// ============================================
-// Phase 8: Toast Notifications
-// ============================================
 function showToast(message, type = 'info') {
   console.log(`[TOAST DEBUG] ${type}: ${message}`);
+  
+  // Show alert for error and warning types to ensure visibility
+  if (type === 'error' || type === 'warning') {
+    alert(message);
+  }
   
   const container = document.getElementById('toast-container');
   if (!container) {
     // Fallback to alert if toast container not found
-    console.warn('[TOAST DEBUG] Toast container not found, using alert');
-    alert(message);
+    console.warn('[TOAST DEBUG] Toast container not found');
     return;
   }
   
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  
-  container.appendChild(toast);
-  
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.add('hiding');
+  try {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    container.appendChild(toast);
+    console.log('[TOAST DEBUG] Toast created and appended');
+    
+    // Auto-remove after 3 seconds
     setTimeout(() => {
-      if (toast.parentNode) {
-        toast.parentNode.removeChild(toast);
-      }
-    }, 300);
-  }, 3000);
+      toast.classList.add('hiding');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
+  } catch (e) {
+    console.error('[TOAST DEBUG] Error creating toast:', e);
+  }
 }
-// ============================================
-// End Phase 8
-// ============================================
 
 // Global variables
 const views = document.querySelectorAll('.view-section');
@@ -45,9 +48,6 @@ const linkLogout = document.getElementById('link-logout');
 const requestModal = document.getElementById('requestModal');
 const itemsContainer = document.getElementById('itemsContainer');
 
-// ============================================
-// Phase 4: Data Persistence with localStorage
-// ============================================
 const STORAGE_KEY = 'ipt_demo_v1';
 
 // Load from localStorage
@@ -119,10 +119,6 @@ function saveToStorage() {
 }
 
 console.log('[STORAGE DEBUG] Storage functions defined');
-
-// ============================================
-// End Phase 4
-// ============================================
 
 // Global variable for current user
 let currentUser = null;
@@ -243,17 +239,11 @@ function showView(viewId, showVerifiedAlert = false) {
 console.log('[AUTH DEBUG] Setting up DOMContentLoaded listener');
 window.addEventListener('DOMContentLoaded', () => {
   console.log('[AUTH DEBUG] DOMContentLoaded fired');
-  
-  // ============================================
-  // Phase 4: Initialize storage and load data
-  // ============================================
+
   console.log('[STORAGE DEBUG] Calling loadFromStorage()');
   loadFromStorage();
   console.log('[STORAGE DEBUG] window.db after load:', window.db);
-  // ============================================
-  // End Phase 4
-  // ============================================
-  
+
   // Check for existing auth_token and restore auth state
   const authToken = localStorage.getItem('auth_token');
   console.log('[AUTH DEBUG] Found auth_token:', authToken);
@@ -495,11 +485,18 @@ if (loginForm) {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPass').value;
     console.log('[AUTH DEBUG] Login attempt for email:', email);
+    console.log('[AUTH DEBUG] window.db exists:', typeof window.db !== 'undefined');
+    console.log('[AUTH DEBUG] window.db.accounts exists:', typeof window.db !== 'undefined' && Array.isArray(window.db.accounts));
+    if (window.db && window.db.accounts) {
+      console.log('[AUTH DEBUG] window.db.accounts count:', window.db.accounts.length);
+      console.log('[AUTH DEBUG] Admin account:', window.db.accounts.find(a => a.email === 'admin@example.com'));
+    }
     
     // Use window.db.accounts or fallback to localStorage
     let accounts = [];
     if (typeof window.db !== 'undefined' && Array.isArray(window.db.accounts)) {
       accounts = window.db.accounts;
+      console.log('[AUTH DEBUG] Using window.db.accounts');
     } else {
       accounts = JSON.parse(localStorage.getItem('accounts')) || [];
       console.log('[AUTH DEBUG] Using localStorage.accounts, count:', accounts.length);
@@ -508,8 +505,9 @@ if (loginForm) {
     // Find account with matching email, password, AND verified: true
     const user = accounts.find(a => a.email === email && a.password === password && a.verified === true);
     console.log('[AUTH DEBUG] User found:', user ? { ...user, password: '***' } : 'null');
-    
     if (user) {
+      console.log('[AUTH DEBUG] User verified status:', user.verified, 'type:', typeof user.verified);
+      
       // Save auth_token = email in localStorage
       localStorage.setItem('auth_token', email);
       console.log('[AUTH DEBUG] auth_token saved:', email);
@@ -603,9 +601,6 @@ function setAuthState(isAuth, user) {
   }
 }
 
-// ============================================
-// Phase 5: Profile Page
-// ============================================
 console.log('[PROFILE DEBUG] Defining renderProfile function');
 function renderProfile() {
   console.log('[PROFILE DEBUG] renderProfile() called');
@@ -654,9 +649,6 @@ if (btnEditProfile) {
     alert('Edit Profile functionality coming soon!\n\nYou can update your profile details in a future version.');
   };
 }
-// ============================================
-// End Phase 5
-// ============================================
 
 // Logout Logic
 console.log('[AUTH DEBUG] Setting up logout listener');
@@ -1042,9 +1034,8 @@ function renderAccountTable() {
 
     accounts.forEach((account, index) => {
         const isSelf = currentUser && currentUser.email === account.email;
-        const deleteBtn = isSelf 
-            ? '<span class="text-muted">Cannot delete</span>' 
-            : `<button class="btn btn-sm btn-danger" onclick="deleteAccount(${index})">Delete</button>`;
+        // Allow deletion of any account including self (with confirmation in deleteAccount)
+        const deleteBtn = `<button class="btn btn-sm btn-danger" onclick="deleteAccount(${index})">Delete</button>`;
         
         tableBody.innerHTML += `
             <tr>
@@ -1108,18 +1099,34 @@ function deleteAccount(index) {
     const accounts = window.db.accounts || [];
     const account = accounts[index];
     
-    // Prevent self-deletion
-    if (currentUser && currentUser.email === account.email) {
-        alert('You cannot delete your own account!');
-        return;
+    const isSelf = currentUser && currentUser.email === account.email;
+    const isAdmin = account.role && account.role.toLowerCase() === 'admin';
+    
+    // Warn if deleting own account
+    if (isSelf) {
+        if (!confirm('You are about to delete YOUR OWN account. You will be logged out. Are you sure?')) {
+            return;
+        }
     }
     
-    if (confirm('Are you sure you want to delete this account?')) {
+    const confirmMsg = isAdmin 
+        ? 'WARNING: You are about to delete an ADMIN account. This cannot be undone! Are you sure?'
+        : 'Are you sure you want to delete this account?';
+    
+    if (confirm(confirmMsg)) {
         accounts.splice(index, 1);
         window.db.accounts = accounts;
         saveToStorage();
         console.log('[ADMIN DEBUG] Account deleted:', account.email);
-        renderAccountTable();
+        
+        // If self-deletion, log out
+        if (isSelf) {
+            setAuthState(false);
+            navigateTo('/');
+            showToast('Your account has been deleted', 'info');
+        } else {
+            renderAccountTable();
+        }
     }
 }
 
@@ -1288,9 +1295,6 @@ function updateEmployeeDeptDropdown() {
 }
 
 // Persistent Login Check
-// ========================
-// My Requests Functions
-// ========================
 
 function openRequestModal() {
   if (requestModal) {
@@ -1474,7 +1478,6 @@ function loadRequests() {
     }
     
     // Show action buttons only for Pending/Approved status AND if user is admin
-    // Use global currentUser variable instead of localStorage
     const isAdmin = currentUser && currentUser.role === 'admin';
     const showDeliveredCancelled = isAdmin && req.status !== 'Delivered' && req.status !== 'Cancelled';
     const showDelete = isAdmin;
@@ -1555,5 +1558,4 @@ function deleteRequest(id) {
 }
 
 function updateActionsColumn() {
-  // This function is no longer needed - kept for reference
 }
